@@ -8,7 +8,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import org.quarkus.experiment.iot.client.infc.QuarkusServiceClientInterface;
 import org.quarkus.experiment.iot.message.builder.infc.IotHubMessageBuilderInterface;
-import org.quarkus.experiment.iot.parse.FacilityExtractor;
+
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -28,9 +28,6 @@ public class QuarkusServiceClient implements QuarkusServiceClientInterface {
     @Inject
     ServiceClient serviceClient;
 
-    @Inject
-    FacilityExtractor parser;
-
 
 
     @ConfigProperty(name="iot.device.id")
@@ -39,12 +36,6 @@ public class QuarkusServiceClient implements QuarkusServiceClientInterface {
 
     public void sendMessageToIotHub(String message) throws IOException, IotHubException, HL7Exception {
         Message iotHubMessage = iotHubMessageBuilderInterface.generateIotHubMessage(message);
-        String facilityId = parser.parseFacilityID(message);
-        HashMap<String,String> map = new HashMap<String, String>();
-        map.put("facility_id", facilityId);
-        String time = String.valueOf(Instant.now().toEpochMilli());
-        map.put("sending_time",time);
-        iotHubMessage.setProperties(map);
         serviceClient.send(deviceId,iotHubMessage);
   }
 

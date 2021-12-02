@@ -28,28 +28,6 @@ public class QuarkusKafkaReactiveConsumer {
 
     private static final Logger LOG = Logger.getLogger(QuarkusKafkaReactiveConsumer.class);
 
-    private final MeterRegistry meterRegistry;
-
-    Timer timer;
-    Counter egressCounter;
-    Counter ingressCounter;
-    Counter iotHubExceptionCounter;
-    Counter hl7andIOExceptionCounter;
-
-
-    public QuarkusKafkaReactiveConsumer(MeterRegistry meterRegistry) {
-        this.meterRegistry = meterRegistry;
-    }
-
-    @PostConstruct
-    public void initMetrics()
-    {
-        this.timer = this.meterRegistry.timer("message.processing.latency");
-        this.egressCounter = this.meterRegistry.counter("messages.sent.count.to.iotHub");
-        this.ingressCounter= this.meterRegistry.counter("messages.from.kafka");
-        this.iotHubExceptionCounter = this.meterRegistry.counter("Exception.from.IOTHub");
-        this.hl7andIOExceptionCounter = this.meterRegistry.counter("Exception.from.hl7.and.io");
-    }
 
     public CompletionStage<Void> fallbackForIotHubService(Message<String> message)
     {
@@ -66,9 +44,7 @@ public class QuarkusKafkaReactiveConsumer {
     //@Timed(name = "checksTimer", description = "A measure of how long it takes to perform the primality test.", unit = MetricUnits.MILLISECONDS)
     public CompletionStage<Void> process(Message<String> message) {
 
-        return timer.record(() ->
-        {
-            this.ingressCounter.increment();
+      
                 try {
                     LOG.debugf("Received message is %s",message.getPayload()); //change to debug
 
@@ -77,19 +53,19 @@ public class QuarkusKafkaReactiveConsumer {
                 } catch (IOException|HL7Exception e) {
                     //e.printStackTrace();
                     LOG.error(e);
-                    this.hl7andIOExceptionCounter.increment();
+      
                     return message.nack(e);
                 } catch (IotHubException e) {
                     //e.printStackTrace();
-                    this.iotHubExceptionCounter.increment();
+      
                     LOG.error(e);
                     return message.nack(e);
                 }
-            this.egressCounter.increment();
+            
 
 
             return message.ack();
-        });
+        
 
 
     }
